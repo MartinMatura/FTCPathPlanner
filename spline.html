@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+  <html>
+  <head>
+    <title>TTTTTitle</title>
+  </head>
+  <body>
+
+    <h3>Robot trail planner</h3>
+
+    <canvas id="myCanvas" width="500" height="500" style="border:1px solid #000000;">
+    </canvas>
+
+    <button onclick="addPoint()"> + </button>    
+    <button onclick="removePoint()"> - </button>
+
+  </body>
+
+  <script>
+    const c = document.getElementById("myCanvas");
+    const ctx = c.getContext("2d");
+
+    var img = new Image();
+    img.src = "./UG_field_map.png";
+
+    var sRect = null;
+
+    var handler = function(e) {
+      var pos = getCursorPosition(c, e);
+      points[sRect][0] = pos.x;
+      points[sRect][1] = pos.y;
+    }
+    c.addEventListener('mousedown', function(e) {
+      let pos = getCursorPosition(c, e);
+      for(var i=0; i<points.length; i++) {
+        let p = points[i];
+        if(pos.x > p[0]-5 && pos.x < p[0]+5 && pos.y > p[1]-5 && pos.y < p[1]+5) {
+          c.addEventListener('mousemove', handler);
+          sRect = i;
+        }
+      }
+    })
+    c.addEventListener('mouseup', function(e){
+      c.removeEventListener("mousemove", handler);
+      sRect = null;
+    });
+    function getCursorPosition(canvas, event) {
+      const rect = canvas.getBoundingClientRect()
+      const x = event.clientX - rect.left
+      const y = event.clientY - rect.top
+      return {x,y};
+    }
+
+    var points = [[50,50],[100,50],[150,50],[200,50],[250, 50], [300, 50], [350, 50], [400, 50]];
+    drawPoints(points);
+
+    function drawPoints(points){
+    const draw = setInterval(() => {
+      ctx.clearRect(0, 0, c.width, c.height);
+      ctx.globalAlpha = 0.5;
+      ctx.drawImage(img,0,0, 500, 500);
+      ctx.globalAlpha = 1;
+      for(var i=0; i<points.length; i++) {
+        ctx.beginPath();
+        ctx.arc(points[i][0], points[i][1], 5, 0, 2 * Math.PI);
+        ctx.fill();
+        if(i < points.length-1) {
+          for(var k=0; k < 50; k++) {
+            var p = getSplinePoint(k/50, i);
+            ctx.fillRect(p.tx, p.ty, 2, 2);
+            //console.log(p);
+          }
+        }
+      }
+    }, 50);
+    }
+
+    function getSplinePoint(t, i) {
+
+      var p0, p1, p2, p3;
+      p0 = i-1;
+      p1 = i;
+      p2 = i+1;
+      p3 = i+2;
+
+      if(i == 0) {
+        p0 = i;
+        p1 = i;
+        p2 = i+1;
+        p3 = i+1;
+      }
+      if(i == points.length-2) {
+        p0 = i-1;
+        p1 = i;
+        p2 = i+1;
+        p3 = i+1;
+      }
+
+      var tt = t * t;
+      var ttt = tt * t;
+
+      var q1 = -ttt + 2*tt - t;
+      var q2 = 3*ttt - 5*tt +2;
+      var q3 = -3*ttt + 4*tt + t;
+      var q4 = ttt - tt;
+
+      var tx = 0.5 * (points[p0][0] * q1 + points[p1][0] * q2 + points[p2][0] * q3 + points[p3][0] * q4);
+      var ty = 0.5 * (points[p0][1] * q1 + points[p1][1] * q2 + points[p2][1] * q3 + points[p3][1] * q4);
+
+      return {tx, ty};
+
+    }
+
+    function addPoint(){
+      points.push([(points[points.length-1][0]+50),(points[points.length-1][1])]);
+      console.log(points);
+    }
+
+    function removePoint(){
+      points.splice(-1,1);
+      console.log(points);
+    }
+
+  </script>
+
+</html>
